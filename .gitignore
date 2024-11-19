@@ -1,0 +1,9 @@
+# VSCode Zig extension files
+.vscode/zig.json
+
+# Zig cache directory
+.zig-cache/
+zig-out/
+
+# Data
+data/
