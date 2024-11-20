@@ -85,18 +85,19 @@ const Stdnt = struct {
 };
 
 pub fn main() !void {
+    // GeneralPurposeAllocator for memory management
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    // Sample CSV content
-    const csv_content =
-        \\gender,race_ethnicity,parental_level_of_education,lunch,test_preparation_course,math_score,reading_score,writing_score,total_score,average_score
-        \\0,group B,bachelor's degree,1,0,72,72,74,218,72.66666666666667
-        \\0,group C,some college,1,1,69,90,88,247,82.33333333333333
-        \\0,group B,master's degree,1,0,90,95,93,278,92.66666666666667
-    ;
-    // TODO Change to import file, then a file selector
+    // File Selection - TODO Change to specifiy file in CLI
+    const file_path: ?[]const u8 = "data/example.csv"; //TODO Change to be fallback as var
+
+    const file = try std.fs.cwd().openFile(file_path.?, .{});
+    defer file.close();
+
+    const csv_content = try std.fs.cwd().readFileAlloc(allocator, file_path.?, 1024 * 1024);
+    defer allocator.free(csv_content);
 
     var lines = std.mem.tokenize(u8, csv_content, "\n");
     var students = std.ArrayList(Stdnt).init(allocator);
