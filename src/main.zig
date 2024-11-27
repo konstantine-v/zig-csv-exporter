@@ -112,8 +112,15 @@ pub fn main() !void {
         try students.append(student);
     }
 
+    const new_file = try std.fs.cwd().createFile("data/output.csv", .{
+        .truncate = true, // Overwrite the file if it already exists
+    });
+    defer new_file.close();
+
+    const writer = new_file.writer();
+
     // Print parsed students
     for (students.items) |student| {
-        std.debug.print("Student: gender={}, eth={}, edu={}, lunch={}, test_prep={}, math={}, read={}, write={}, total={}\n", .{ student.gender, @intFromEnum(student.eth), @intFromEnum(student.p_edu), student.lunch, student.test_prep, student.math_scr, student.read_scr, student.writ_scr, student.total_scr });
+        try writer.print("Student: gender={}, eth={}, edu={}, lunch={}, test_prep={}, math={}, read={}, write={}, total={}\n", .{ student.gender, @intFromEnum(student.eth), @intFromEnum(student.p_edu), student.lunch, student.test_prep, student.math_scr, student.read_scr, student.writ_scr, student.total_scr });
     }
 }
