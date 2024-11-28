@@ -3,9 +3,9 @@ Using the Kaggle dataset for student records: https://www.kaggle.com/datasets/mu
 
 The idea for this was to practice using Zig and learn how to use it in a sort of real scenario for parsing data.
 
-The data is read, parsed to how I wanted it, then output in the terminal.
+The data is read, parsed to how I wanted it, then output in the terminal. 
 
-Ideally this output would be exported back as a csv or be put into a database.
+The output file is more compact reducing the size from ~550Kb -> ~320Kb. 
 
 ### Example Output
 ```
@@ -19,14 +19,19 @@ Student: gender=false, eth=3, edu=2, lunch=false, test_prep=false, math=77, read
 I modified the csv to be 10k lines and have it running under a second while writing to a new file. When writing to debug print it's much slower.
 
 ```
-Milliseconds      : 905
-Ticks             : 9050106
-TotalDays         : 1.04746597222222E-05
-TotalHours        : 0.000251391833333333
-TotalMinutes      : 0.01508351
-TotalSeconds      : 0.9050106
-TotalMilliseconds : 905.0106
+Milliseconds      : 866
+Ticks             : 8669053
+TotalDays         : 1.00336261574074E-05
+TotalHours        : 0.000240807027777778
+TotalMinutes      : 0.0144484216666667
+TotalSeconds      : 0.8669053
+TotalMilliseconds : 866.9053
 ```
 
 ### Notes
-The code needs some obvious improvements but this is mainly so I can learn and improve as I learn
+The code needs some obvious improvements but this is mainly so I can learn and improve as I learn.
+
+Next improvements will be
+- Add a CLI interface to specify input and output files
+- Improve memory management, GPA might not be the best option
+- Made code improvements like switchcases and whatnot

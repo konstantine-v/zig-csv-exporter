@@ -48,13 +48,14 @@ const Stdnt = struct {
         for (edu_str, 0..) |char, i| {
             lowercase[i] = std.ascii.toLower(char);
         }
-
+        // Map to enums for degree status
         if (std.mem.eql(u8, lowercase, "some high school")) return .hs_some;
         if (std.mem.eql(u8, lowercase, "high school")) return .hs_full;
         if (std.mem.eql(u8, lowercase, "some college")) return .college_some;
         if (std.mem.eql(u8, lowercase, "associate's degree")) return .deg_associates;
         if (std.mem.eql(u8, lowercase, "bachelor's degree")) return .deg_bachelor;
         if (std.mem.eql(u8, lowercase, "master's degree")) return .deg_master;
+        // TODO: Change to switchcase?
 
         std.debug.print("Invalid education value: {s}\n", .{edu_str});
 
@@ -91,7 +92,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     // File Selection - TODO Change to specifiy file in CLI
-    const file_path: ?[]const u8 = "data/example.csv"; //TODO Change to be fallback as var
+    const file_path: ?[]const u8 = "data/example.csv";
 
     const file = try std.fs.cwd().openFile(file_path.?, .{});
     defer file.close();
@@ -119,8 +120,8 @@ pub fn main() !void {
 
     const writer = new_file.writer();
 
-    // Print parsed students
+    // Convert file to updated format
     for (students.items) |student| {
-        try writer.print("Student: gender={}, eth={}, edu={}, lunch={}, test_prep={}, math={}, read={}, write={}, total={}\n", .{ student.gender, @intFromEnum(student.eth), @intFromEnum(student.p_edu), student.lunch, student.test_prep, student.math_scr, student.read_scr, student.writ_scr, student.total_scr });
+        try writer.print("{},{},{},{},{},{},{},{},{}\n", .{ student.gender, @intFromEnum(student.eth), @intFromEnum(student.p_edu), student.lunch, student.test_prep, student.math_scr, student.read_scr, student.writ_scr, student.total_scr });
     }
 }
