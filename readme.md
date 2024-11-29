@@ -9,11 +9,12 @@ The output file is more compact reducing the size from ~550Kb -> ~320Kb.
 
 ### Example Output
 ```
-Student: gender=true, eth=2, edu=1, lunch=false, test_prep=false, math=62, read=55, write=55, total=172
-Student: gender=false, eth=2, edu=1, lunch=false, test_prep=true, math=59, read=71, write=65, total=195
-Student: gender=false, eth=3, edu=2, lunch=true, test_prep=true, math=68, read=78, write=77, total=223
-Student: gender=false, eth=3, edu=2, lunch=false, test_prep=false, math=77, read=86, write=86, total=249
+true,3,1,false,false,44,51,48,143
+false,4,2,true,true,86,85,91,262
+false,4,3,true,false,85,92,85,262
+false,0,5,false,false,50,67,73,190
 ```
+This allows for a more optimized size which is better for when reading it and storing in a db or whatever a user would want.
 
 ### Execution Time
 I modified the csv to be 10k lines and have it running under a second while writing to a new file. When writing to debug print it's much slower.
@@ -35,3 +36,4 @@ Next improvements will be
 - Add a CLI interface to specify input and output files
 - Improve memory management, GPA might not be the best option
 - Made code improvements like switchcases and whatnot
+- Compression on the ouput file
