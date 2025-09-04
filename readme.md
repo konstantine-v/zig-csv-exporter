@@ -1,11 +1,16 @@
 ## CSV Parse Test
 Using the Kaggle dataset for student records: https://www.kaggle.com/datasets/muhammadroshaanriaz/students-performance-dataset-cleaned/data
 
+
 The idea for this was to practice using Zig and learn how to use it in a sort of real scenario for parsing data.
 
 The data is read, parsed to how I wanted it, then output in the terminal. 
 
 The output file is more compact reducing the size from ~550Kb -> ~320Kb. 
+
+## Prerequisites
+- Zig 0.14.1 (latest as of Sept 2025)
+- CSV file (the one from Kaggle) -> `students.csv`
 
 ### Example Output
 ```
@@ -17,23 +22,18 @@ false,0,5,false,false,50,67,73,190
 This allows for a more optimized size which is better for when reading it and storing in a db or whatever a user would want.
 
 ### Execution Time
-I modified the csv to be 10k lines and have it running under a second while writing to a new file. When writing to debug print it's much slower.
-
+I can run the program and it takes about `0.083` total seconds to run on my machine.
 ```
-Milliseconds      : 866
-Ticks             : 8669053
-TotalDays         : 1.00336261574074E-05
-TotalHours        : 0.000240807027777778
-TotalMinutes      : 0.0144484216666667
-TotalSeconds      : 0.8669053
-TotalMilliseconds : 866.9053
+./main  0.03s user 0.06s system 98% cpu 0.083 total
 ```
 
 ### Notes
 The code needs some obvious improvements but this is mainly so I can learn and improve as I learn.
 
-Next improvements will be
+### Changelog
+- 2025-09-03: Updated code to work with the latest Zig version
+
+### Future Improvements
 - Add a CLI interface to specify input and output files
-- Improve memory management, GPA might not be the best option
-- Made code improvements like switchcases and whatnot
+- Improve memory management
 - Compression on the ouput file

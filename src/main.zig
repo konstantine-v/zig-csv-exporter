@@ -3,10 +3,38 @@
 
 const std = @import("std");
 
+// Reusable mapping type generator to ensure type identity across call sites
+fn MappingType(comptime T: type) type {
+    return struct { str: []const u8, value: T };
+}
+
 // Enum for race/ethnicity groups
 const Ethnicity = enum(u4) { group_a = 0, group_b = 1, group_c = 2, group_d = 3, group_e = 4, _ };
 
 const Education = enum(u4) { hs_some = 0, hs_full = 1, college_some = 2, deg_associates = 3, deg_bachelor = 4, deg_master = 5, _ };
+
+// Generic function to convert string to lowercase
+fn toLowercase(allocator: std.mem.Allocator, input: []const u8) ![]u8 {
+    var lowercase = try allocator.alloc(u8, input.len);
+    for (input, 0..) |char, i| {
+        lowercase[i] = std.ascii.toLower(char);
+    }
+    return lowercase;
+}
+
+// Generic function to parse enum from string with mapping
+fn parseEnumFromString(comptime T: type, allocator: std.mem.Allocator, input: []const u8, mappings: []const MappingType(T)) !T {
+    const lowercase = try toLowercase(allocator, input);
+    defer allocator.free(lowercase);
+
+    for (mappings) |mapping| {
+        if (std.mem.eql(u8, lowercase, mapping.str)) {
+            return mapping.value;
+        }
+    }
+
+    return error.InvalidValue;
+}
 
 const Stdnt = struct {
     gender: bool,
@@ -21,69 +49,68 @@ const Stdnt = struct {
 
     // Custom method to parse ethnicity
     fn parseEthnicity(allocator: std.mem.Allocator, eth_str: []const u8) !Ethnicity {
-        // Allocate buffer for lowercase conversion
-        var lowercase = try allocator.alloc(u8, eth_str.len);
-        defer allocator.free(lowercase);
+        const mappings = [_]MappingType(Ethnicity){
+            .{ .str = "group a", .value = .group_a },
+            .{ .str = "group b", .value = .group_b },
+            .{ .str = "group c", .value = .group_c },
+            .{ .str = "group d", .value = .group_d },
+            .{ .str = "group e", .value = .group_e },
+        };
 
-        // Manual lowercase conversion
-        for (eth_str, 0..) |char, i| {
-            lowercase[i] = std.ascii.toLower(char);
-        }
-
-        // Map variations to enum values
-        if (std.mem.eql(u8, lowercase, "group a")) return .group_a;
-        if (std.mem.eql(u8, lowercase, "group b")) return .group_b;
-        if (std.mem.eql(u8, lowercase, "group c")) return .group_c;
-        if (std.mem.eql(u8, lowercase, "group d")) return .group_d;
-        if (std.mem.eql(u8, lowercase, "group e")) return .group_e;
-
-        return error.InvalidEthnicity;
+        return parseEnumFromString(Ethnicity, allocator, eth_str, &mappings);
     }
 
-    // Custom method to parse Parent Education, follows parseEthnicity
+    // Custom method to parse Parent Education
     fn parseEducation(allocator: std.mem.Allocator, edu_str: []const u8) !Education {
-        var lowercase = try allocator.alloc(u8, edu_str.len);
-        defer allocator.free(lowercase);
+        const mappings = [_]MappingType(Education){
+            .{ .str = "some high school", .value = .hs_some },
+            .{ .str = "high school", .value = .hs_full },
+            .{ .str = "some college", .value = .college_some },
+            .{ .str = "associate's degree", .value = .deg_associates },
+            .{ .str = "bachelor's degree", .value = .deg_bachelor },
+            .{ .str = "master's degree", .value = .deg_master },
+        };
 
-        for (edu_str, 0..) |char, i| {
-            lowercase[i] = std.ascii.toLower(char);
-        }
-        // Map to enums for degree status
-        if (std.mem.eql(u8, lowercase, "some high school")) return .hs_some;
-        if (std.mem.eql(u8, lowercase, "high school")) return .hs_full;
-        if (std.mem.eql(u8, lowercase, "some college")) return .college_some;
-        if (std.mem.eql(u8, lowercase, "associate's degree")) return .deg_associates;
-        if (std.mem.eql(u8, lowercase, "bachelor's degree")) return .deg_bachelor;
-        if (std.mem.eql(u8, lowercase, "master's degree")) return .deg_master;
-        // TODO: Change to switchcase?
-
-        std.debug.print("Invalid education value: {s}\n", .{edu_str});
-
-        return error.InvalidEducation;
+        return parseEnumFromString(Education, allocator, edu_str, &mappings);
     }
 
     // Parse method for CSV line
     pub fn fromCSVLine(allocator: std.mem.Allocator, line: []const u8) !Stdnt {
-        var tokens = std.mem.tokenize(u8, line, ",");
+        var tokens = std.mem.splitSequence(u8, line, ",");
 
         // Skip header if present
         if (std.mem.startsWith(u8, line, "gender,race_ethnicity")) {
             return error.HeaderRow;
         }
 
+        const gender_token = tokens.next() orelse return error.InvalidFormat;
+        const eth_token = tokens.next() orelse return error.InvalidFormat;
+        const edu_token = tokens.next() orelse return error.InvalidFormat;
+        const lunch_token = tokens.next() orelse return error.InvalidFormat;
+        const prep_token = tokens.next() orelse return error.InvalidFormat;
+        const math_token = tokens.next() orelse return error.InvalidFormat;
+        const read_token = tokens.next() orelse return error.InvalidFormat;
+        const write_token = tokens.next() orelse return error.InvalidFormat;
+        const total_token = tokens.next() orelse return error.InvalidFormat;
+
         return Stdnt{
-            .gender = (try std.fmt.parseInt(u8, tokens.next() orelse return error.InvalidFormat, 10)) == 1,
-            .eth = try parseEthnicity(allocator, tokens.next() orelse return error.InvalidFormat),
-            .p_edu = try parseEducation(allocator, tokens.next() orelse return error.InvalidFormat),
-            .lunch = (try std.fmt.parseInt(u8, tokens.next() orelse return error.InvalidFormat, 10)) == 1,
-            .test_prep = (try std.fmt.parseInt(u8, tokens.next() orelse return error.InvalidFormat, 10)) == 1,
-            .math_scr = try std.fmt.parseInt(u8, tokens.next() orelse return error.InvalidFormat, 10),
-            .read_scr = try std.fmt.parseInt(u8, tokens.next() orelse return error.InvalidFormat, 10),
-            .writ_scr = try std.fmt.parseInt(u8, tokens.next() orelse return error.InvalidFormat, 10),
-            .total_scr = try std.fmt.parseInt(u16, tokens.next() orelse return error.InvalidFormat, 10),
+            .gender = (try std.fmt.parseInt(u8, gender_token, 10)) == 1,
+            .eth = try parseEthnicity(allocator, eth_token),
+            .p_edu = try parseEducation(allocator, edu_token),
+            .lunch = (try std.fmt.parseInt(u8, lunch_token, 10)) == 1,
+            .test_prep = (try std.fmt.parseInt(u8, prep_token, 10)) == 1,
+            .math_scr = try std.fmt.parseInt(u8, math_token, 10),
+            .read_scr = try std.fmt.parseInt(u8, read_token, 10),
+            .writ_scr = try std.fmt.parseInt(u8, write_token, 10),
+            .total_scr = try std.fmt.parseInt(u16, total_token, 10),
         };
     }
 };
+
+// Helper function to convert boolean to u8
+fn boolToU8(value: bool) u8 {
+    return if (value) 1 else 0;
+}
 
 pub fn main() !void {
     // GeneralPurposeAllocator for memory management
@@ -92,36 +119,40 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     // File Selection - TODO Change to specifiy file in CLI
-    const file_path: ?[]const u8 = "data/example.csv";
+    const file_path = "students.csv";
 
-    const file = try std.fs.cwd().openFile(file_path.?, .{});
+    const file = try std.fs.cwd().openFile(file_path, .{});
     defer file.close();
 
-    const csv_content = try std.fs.cwd().readFileAlloc(allocator, file_path.?, 1024 * 1024);
+    const csv_content = try std.fs.cwd().readFileAlloc(allocator, file_path, 1024 * 1024);
     defer allocator.free(csv_content);
 
-    var lines = std.mem.tokenize(u8, csv_content, "\n");
-    var students = std.ArrayList(Stdnt).init(allocator);
-    defer students.deinit();
+    var lines = std.mem.splitSequence(u8, csv_content, "\n");
+    var students = std.ArrayListUnmanaged(Stdnt){};
+    defer students.deinit(allocator);
 
     // Parse each line into a Stdnt
     while (lines.next()) |line| {
-        const student = Stdnt.fromCSVLine(allocator, line) catch |err| {
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (trimmed.len == 0) continue; // skip empty/whitespace-only lines
+        const student = Stdnt.fromCSVLine(allocator, trimmed) catch |err| {
             if (err == error.HeaderRow) continue;
             return err;
         };
-        try students.append(student);
+        try students.append(allocator, student);
     }
 
-    const new_file = try std.fs.cwd().createFile("data/output.csv", .{
+    const new_file = try std.fs.cwd().createFile("output.csv", .{
         .truncate = true, // Overwrite the file if it already exists
     });
     defer new_file.close();
 
-    const writer = new_file.writer();
+    // Use direct file writes with formatted buffer lines
 
     // Convert file to updated format
+    var line_buf: [256]u8 = undefined;
     for (students.items) |student| {
-        try writer.print("{},{},{},{},{},{},{},{},{}\n", .{ student.gender, @intFromEnum(student.eth), @intFromEnum(student.p_edu), student.lunch, student.test_prep, student.math_scr, student.read_scr, student.writ_scr, student.total_scr });
+        const line = try std.fmt.bufPrint(&line_buf, "{},{},{},{},{},{},{},{},{}\n", .{ boolToU8(student.gender), @intFromEnum(student.eth), @intFromEnum(student.p_edu), boolToU8(student.lunch), boolToU8(student.test_prep), student.math_scr, student.read_scr, student.writ_scr, student.total_scr });
+        try new_file.writeAll(line);
     }
 }
