@@ -1,7 +1,9 @@
 .{
-    .name = "csv_importer",
+    .name = .zigcsvtest,
     .version = "0.2.0",
-    .dependencies = .{},
+    .fingerprint = 0x904e7e122cbcf4be, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.14.1",
+    // .dependencies = .{},
     .paths = .{
         "build.zig",
         "build.zig.zon",

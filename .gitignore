@@ -7,3 +7,7 @@ zig-out/
 
 # Data
 data/
+
+main
+output.csv
+students.csv
