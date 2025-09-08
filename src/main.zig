@@ -92,6 +92,7 @@ const Stdnt = struct {
         const read_token = tokens.next() orelse return error.InvalidFormat;
         const write_token = tokens.next() orelse return error.InvalidFormat;
         const total_token = tokens.next() orelse return error.InvalidFormat;
+        if (tokens.next() != null) return error.InvalidFormat;
 
         return Stdnt{
             .gender = (try std.fmt.parseInt(u8, gender_token, 10)) == 1,
@@ -118,8 +119,11 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    // File Selection - TODO Change to specifiy file in CLI
-    const file_path = "students.csv";
+    // CLI: first argument is the input CSV file path
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
+    if (args.len < 2) return error.MissingFileArgument;
+    const file_path: []const u8 = args[1];
 
     const file = try std.fs.cwd().openFile(file_path, .{});
     defer file.close();
@@ -152,7 +156,17 @@ pub fn main() !void {
     // Convert file to updated format
     var line_buf: [256]u8 = undefined;
     for (students.items) |student| {
-        const line = try std.fmt.bufPrint(&line_buf, "{},{},{},{},{},{},{},{},{}\n", .{ boolToU8(student.gender), @intFromEnum(student.eth), @intFromEnum(student.p_edu), boolToU8(student.lunch), boolToU8(student.test_prep), student.math_scr, student.read_scr, student.writ_scr, student.total_scr });
+        const gender_u8: u8 = boolToU8(student.gender);
+        const eth_u8: u8 = @intCast(@intFromEnum(student.eth));
+        const edu_u8: u8 = @intCast(@intFromEnum(student.p_edu));
+        const lunch_u8: u8 = boolToU8(student.lunch);
+        const prep_u8: u8 = boolToU8(student.test_prep);
+        const math: u8 = student.math_scr;
+        const read: u8 = student.read_scr;
+        const write: u8 = student.writ_scr;
+        const total: u16 = student.total_scr;
+
+        const line = try std.fmt.bufPrint(&line_buf, "{},{},{},{},{},{},{},{},{}\n", .{ gender_u8, eth_u8, edu_u8, lunch_u8, prep_u8, math, read, write, total });
         try new_file.writeAll(line);
     }
 }
