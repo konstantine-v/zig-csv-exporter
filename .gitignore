@@ -11,3 +11,4 @@ data/
 main
 output.csv
 students.csv
+*.o

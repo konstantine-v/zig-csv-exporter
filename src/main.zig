@@ -42,10 +42,9 @@ const Stdnt = struct {
     p_edu: Education,
     lunch: bool,
     test_prep: bool,
-    math_scr: u8,
-    read_scr: u8,
-    writ_scr: u8,
-    total_scr: u16,
+    math_scr: u7,
+    read_scr: u7,
+    writ_scr: u7,
 
     // Custom method to parse ethnicity
     fn parseEthnicity(allocator: std.mem.Allocator, eth_str: []const u8) !Ethnicity {
@@ -91,25 +90,27 @@ const Stdnt = struct {
         const math_token = tokens.next() orelse return error.InvalidFormat;
         const read_token = tokens.next() orelse return error.InvalidFormat;
         const write_token = tokens.next() orelse return error.InvalidFormat;
-        const total_token = tokens.next() orelse return error.InvalidFormat;
-        if (tokens.next() != null) return error.InvalidFormat;
+
+        // Skip any extra columns at the end
+        while (tokens.next() != null) {
+            // Skip extra columns
+        }
 
         return Stdnt{
-            .gender = (try std.fmt.parseInt(u8, gender_token, 10)) == 1,
+            .gender = (try std.fmt.parseInt(u1, gender_token, 10)) == 1,
             .eth = try parseEthnicity(allocator, eth_token),
             .p_edu = try parseEducation(allocator, edu_token),
-            .lunch = (try std.fmt.parseInt(u8, lunch_token, 10)) == 1,
-            .test_prep = (try std.fmt.parseInt(u8, prep_token, 10)) == 1,
-            .math_scr = try std.fmt.parseInt(u8, math_token, 10),
-            .read_scr = try std.fmt.parseInt(u8, read_token, 10),
-            .writ_scr = try std.fmt.parseInt(u8, write_token, 10),
-            .total_scr = try std.fmt.parseInt(u16, total_token, 10),
+            .lunch = (try std.fmt.parseInt(u1, lunch_token, 10)) == 1,
+            .test_prep = (try std.fmt.parseInt(u1, prep_token, 10)) == 1,
+            .math_scr = try std.fmt.parseInt(u7, math_token, 10),
+            .read_scr = try std.fmt.parseInt(u7, read_token, 10),
+            .writ_scr = try std.fmt.parseInt(u7, write_token, 10),
         };
     }
 };
 
 // Helper function to convert boolean to u8
-fn boolToU8(value: bool) u8 {
+fn boolToU1(value: bool) u1 {
     return if (value) 1 else 0;
 }
 
@@ -156,17 +157,34 @@ pub fn main() !void {
     // Convert file to updated format
     var line_buf: [256]u8 = undefined;
     for (students.items) |student| {
-        const gender_u8: u8 = boolToU8(student.gender);
-        const eth_u8: u8 = @intCast(@intFromEnum(student.eth));
-        const edu_u8: u8 = @intCast(@intFromEnum(student.p_edu));
-        const lunch_u8: u8 = boolToU8(student.lunch);
-        const prep_u8: u8 = boolToU8(student.test_prep);
-        const math: u8 = student.math_scr;
-        const read: u8 = student.read_scr;
-        const write: u8 = student.writ_scr;
-        const total: u16 = student.total_scr;
+        // Input data
+        const gender_int: u1 = boolToU1(student.gender);
+        const eth_int: u3 = @intCast(@intFromEnum(student.eth)); // 5 values
+        const edu_int: u3 = @intCast(@intFromEnum(student.p_edu)); // 6 values
+        const lunch_int: u1 = boolToU1(student.lunch);
+        const prep_int: u1 = boolToU1(student.test_prep);
+        const math_int: u7 = student.math_scr;
+        const read_int: u7 = student.read_scr;
+        const write_int: u7 = student.writ_scr;
 
-        const line = try std.fmt.bufPrint(&line_buf, "{},{},{},{},{},{},{},{},{}\n", .{ gender_u8, eth_u8, edu_u8, lunch_u8, prep_u8, math, read, write, total });
+        // Pack into a u64
+        const packed_value: u64 =
+            (@as(u32, gender_int) << 29) |
+            (@as(u32, eth_int) << 26) |
+            (@as(u32, edu_int) << 23) |
+            (@as(u32, lunch_int) << 22) |
+            (@as(u32, prep_int) << 21) |
+            (@as(u32, math_int) << 14) |
+            (@as(u32, read_int) << 7) |
+            @as(u32, write_int);
+
+        // Print as hex (e.g., 0x7C81E240)
+        // std.debug.print("Packed hex: 0x{X:0>16}\n", .{packed_value});
+
+        const line = try std.fmt.bufPrint(&line_buf, "{}, ", .{packed_value});
         try new_file.writeAll(line);
     }
+
+    // Ensure all data is flushed to disk
+    try new_file.sync();
 }
